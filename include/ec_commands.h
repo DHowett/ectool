@@ -1991,10 +1991,12 @@ BUILD_ASSERT(sizeof(struct ec_response_rand_num) == 0);
 
 #define VBOOT2_KEY_ID_BYTES 20
 
+#ifndef EXTERNAL_ECTOOL_BUILD
 #ifdef CHROMIUM_EC
 /* Don't force external projects to depend on the vboot headers. */
 #include "vb21_struct.h"
 BUILD_ASSERT(sizeof(struct vb2_id) == VBOOT2_KEY_ID_BYTES);
+#endif
 #endif
 
 struct ec_response_rwsig_info {

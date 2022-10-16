@@ -11,7 +11,6 @@
 
 #include <stdarg.h>
 #include <stdint.h>
-#include <stdnoreturn.h>
 
 #include "common.h"
 #include "software_panic.h"
@@ -188,59 +187,6 @@ void panic_data_print(const struct panic_data *pdata);
  * @param pdata pointer to saved panic data
  */
 void panic_data_ccprint(const struct panic_data *pdata);
-
-/**
- * Report an assertion failure and reset
- *
- * @param msg		Assertion expression or other message
- * @param func		Function name where assertion happened
- * @param fname		File name where assertion happened
- * @param linenum	Line number where assertion happened
- */
-#ifdef CONFIG_DEBUG_ASSERT_BRIEF
-#if !(defined(TEST_FUZZ) || defined(CONFIG_ZTEST))
-noreturn
-#endif
-	void
-	panic_assert_fail(const char *fname, int linenum);
-#else
-#if !(defined(TEST_FUZZ) || defined(CONFIG_ZTEST))
-noreturn
-#endif
-	void
-	panic_assert_fail(const char *msg, const char *func, const char *fname,
-			  int linenum);
-#endif
-
-/**
- * Display a custom panic message and reset
- *
- * @param msg	Panic message
- */
-#if !(defined(TEST_FUZZ) || defined(CONFIG_ZTEST))
-noreturn
-#endif
-	void
-	panic(const char *msg);
-
-/**
- * Display a default message and reset
- */
-#if !(defined(TEST_FUZZ) || defined(CONFIG_ZTEST))
-noreturn
-#endif
-	void
-	panic_reboot(void);
-
-/**
- * Store a panic log and halt the system for a software-related reason, such as
- * stack overflow or assertion failure.
- */
-#if !(defined(TEST_FUZZ) || defined(CONFIG_ZTEST))
-noreturn
-#endif
-	void
-	software_panic(uint32_t reason, uint32_t info);
 
 /**
  * Log a panic in the panic log, but don't halt the system. Normally

@@ -16,6 +16,7 @@
 #include "config.h"
 #include "task_filter.h"
 
+#ifndef EXTERNAL_ECTOOL_BUILD
 /* define the name of the header containing the list of tasks */
 #define STRINGIFY0(name) #name
 #define STRINGIFY(name) STRINGIFY0(name)
@@ -30,6 +31,7 @@
 #ifdef TEST_BUILD
 #include TEST_TASK_LIST
 #endif
+#endif // EXTERNAL_ECTOOL_BUILD
 
 /* Task identifier (8 bits) */
 typedef uint8_t task_id_t;
@@ -44,22 +46,7 @@ typedef uint8_t task_id_t;
 #define TASK(n, ...) TASK_ID_##n,
 enum {
 	TASK_ID_IDLE,
-	/* CONFIG_TASK_LIST is a macro coming from the BOARD_TASK_LIST file */
-	CONFIG_TASK_LIST
-		/* CONFIG_TEST_TASK_LIST is a macro from the TEST_TASK_LIST file
-		 */
-		CONFIG_TEST_TASK_LIST
-			/* For CTS tasks */
-			CONFIG_CTS_TASK_LIST
-#ifdef EMU_BUILD
-				TASK_ID_TEST_RUNNER,
-#endif
-	/* Number of tasks */
 	TASK_ID_COUNT,
-/* Special task identifiers */
-#ifdef EMU_BUILD
-	TASK_ID_INT_GEN = 0xfe, /* interrupt generator */
-#endif
 	TASK_ID_INVALID = 0xff, /* unable to find the task */
 };
 #undef TASK

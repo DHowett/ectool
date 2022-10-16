@@ -5745,12 +5745,14 @@
 #error Include config.h instead of board.h!
 #endif
 
+#ifndef EXTERNAL_ECTOOL_BUILD
 #include "config_chip.h"
 #ifdef CONFIG_ZEPHYR
 #include "zephyr_shim.h"
 #else
 #include "board.h"
 #endif
+#endif // EXTERNAL_ECTOOL_BUILD
 
 /*
  * Define CONFIG_HOST_ESPI_VW_POWER_SIGNAL if any power signals from the host
@@ -6539,8 +6541,10 @@
  * override some of the config flags in non-standard ways to mock only parts of
  * the system.
  */
+#ifndef EXTERNAL_ECTOOL_BUILD
 #include "fuzz_config.h"
 #include "test_config.h"
+#endif // EXTERNAL_ECTOOL_BUILD
 
 /*
  * Validity checks to make sure some of the configs above make sense.

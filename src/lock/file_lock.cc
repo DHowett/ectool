@@ -28,7 +28,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifndef EXTERNAL_ECTOOL_BUILD
 #include "android.h"
+#endif // EXTERNAL_ECTOOL_BUILD
+
 #include "ipc_lock.h"
 #include "locks.h"
 
@@ -66,6 +69,7 @@ static int file_lock_open_or_create(struct ipc_lock *lock)
 {
 	char path[PATH_MAX];
 
+#ifndef EXTERNAL_ECTOOL_BUILD
 	if (in_android()) {
 		char *tmpdir;
 
@@ -77,7 +81,9 @@ static int file_lock_open_or_create(struct ipc_lock *lock)
 			     lock->filename) < 0) {
 			return -1;
 		}
-	} else {
+	} else
+#endif // EXTERNAL_ECTOOL_BUILD
+	{
 		const char *dir = SYSTEM_LOCKFILE_DIR;
 		const char fallback[] = "/tmp";
 
