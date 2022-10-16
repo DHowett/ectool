@@ -20,7 +20,7 @@
 #include "ec_commands.h"
 #include "misc_util.h"
 
-#include "../../FrameworkWindowsUtils/CrosEC/Public.h"
+#include <CrosEC/Public.h>
 
 static HANDLE fd;
 

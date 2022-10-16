@@ -46,6 +46,7 @@ else()
 
 	target_link_libraries(ectool PRIVATE
 		getopt
+		CrosECDriver
 		onecoreuap_apiset.lib
 	)
 
