@@ -23,7 +23,6 @@
 #include "chipset.h"
 #include "compile_time_macros.h"
 #include "crc.h"
-#include "cros_ec_dev.h"
 #include "ec_panicinfo.h"
 #include "ec_flash.h"
 #include "ec_version.h"
@@ -34,6 +33,10 @@
 #include "misc_util.h"
 #include "panic.h"
 #include "usb_pd.h"
+
+#ifndef _WIN32
+#include "cros_ec_dev.h"
+#endif
 
 /* Maximum flash size (16 MB, conservative) */
 #define MAX_FLASH_SIZE 0x1000000
@@ -2986,7 +2989,7 @@ int cmd_pd_get_amode(int argc, char *argv[])
 }
 
 /* The I/O asm funcs exist only on x86. */
-#if defined(__i386__) || defined(__x86_64__)
+#if (defined(__i386__) || defined(__x86_64__)) && !defined(_WIN32)
 #include <sys/io.h>
 
 int cmd_serial_test(int argc, char *argv[])
@@ -3117,6 +3120,9 @@ static void sig_quit_handler(int sig)
 
 int cmd_stress_test(int argc, char *argv[])
 {
+#ifdef _WIN32
+	return 0;
+#else
 	int i;
 	bool reboot = false;
 	time_t now;
@@ -3257,6 +3263,7 @@ int cmd_stress_test(int argc, char *argv[])
 	       difftime(time(NULL), start_time));
 	printf("Total failures:  %" PRIu64 "\n", failures);
 	return 0;
+#endif
 }
 
 int read_mapped_temperature(int id)
@@ -8999,7 +9006,7 @@ static int cmd_kbid(int argc, char *argv[])
 		/* Keyboard ID was not supported */
 		printf("Keyboard doesn't support ID\n");
 		break;
-	case KEYBOARD_ID_UNREADABLE:
+	case static_cast<uint32_t>(KEYBOARD_ID_UNREADABLE):
 		/* Ghosting ID was detected */
 		printf("Reboot and keep hands off the keyboard during"
 		       " next boot-up\n");
@@ -11091,9 +11098,12 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case OPT_DEVICE:
+#ifndef _WIN32
 			if (parse_vidpid(optarg, &vid, &pid)) {
 				interfaces = COMM_USB;
-			} else {
+			} else
+#endif
+			{
 				fprintf(stderr, "Invalid --device\n");
 				parse_error = 1;
 			}
@@ -11163,10 +11173,12 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 		if (interfaces == COMM_USB) {
+#ifndef _WIN32
 			if (comm_init_usb(vid, pid)) {
 				fprintf(stderr, "Couldn't find EC on USB.\n");
 				goto out;
 			}
+#endif
 		} else if (comm_init_alt(interfaces, device_name, i2c_bus)) {
 			fprintf(stderr, "Couldn't find EC\n");
 			goto out;
@@ -11193,8 +11205,10 @@ int main(int argc, char *argv[])
 out:
 	release_gec_lock();
 
+#ifndef _WIN32
 	if (interfaces == COMM_USB)
 		comm_usb_exit();
+#endif
 
 	return !!rv;
 }

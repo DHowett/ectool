@@ -8,7 +8,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef _WIN32
 #include <sys/utsname.h>
+#endif // _WIN32
 
 #include "comm-host.h"
 #include "misc_util.h"
@@ -144,6 +147,7 @@ int ec_cmd_version_supported(int cmd, int ver)
  */
 int kernel_version_ge(int major, int minor, int sublevel)
 {
+#ifndef _WIN32
 	struct utsname uts;
 	int atoms, kmajor, kminor, ksublevel;
 
@@ -171,4 +175,7 @@ int kernel_version_ge(int major, int minor, int sublevel)
 		return 0 == sublevel;
 
 	return ksublevel >= sublevel;
+#else // _WIN32
+	return 1;
+#endif // _WIN32
 }

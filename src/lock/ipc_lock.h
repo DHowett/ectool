@@ -9,9 +9,22 @@
 struct ipc_lock {
 	int is_held; /* internal */
 	const char *filename; /* provided by the developer */
+#ifdef _WIN32
+	void* context; /* internal */
+#else
 	int fd; /* internal */
+#endif
 };
 
+#ifdef _WIN32
+/* don't use C99 initializers here, so this can be used in C++ code */
+#define LOCKFILE_INIT(lockfile)                  \
+	{                                        \
+		0, /* is_held */                 \
+			lockfile, /* filename */ \
+			NULL, /* context */             \
+	}
+#else
 /* don't use C99 initializers here, so this can be used in C++ code */
 #define LOCKFILE_INIT(lockfile)                  \
 	{                                        \
@@ -19,6 +32,7 @@ struct ipc_lock {
 			lockfile, /* filename */ \
 			-1, /* fd */             \
 	}
+#endif
 
 /*
  * acquire_lock: acquire a lock

@@ -30,7 +30,9 @@
 /* Pass in an option message to display after condition */
 
 #ifndef CONFIG_ZEPHYR
+#ifndef BUILD_ASSERT
 #define BUILD_ASSERT(cond, ...) _BA0_(cond, __FILE__, __LINE__, __VA_ARGS__)
+#endif
 #endif
 
 /*

@@ -11,9 +11,12 @@
 #include <string.h>
 
 #include "comm-host.h"
-#include "cros_ec_dev.h"
 #include "ec_commands.h"
 #include "misc_util.h"
+
+#ifndef _WIN32
+#include "cros_ec_dev.h"
+#endif
 
 int (*ec_command_proto)(int command, int version, const void *outdata,
 			int outsize, void *indata, int insize);

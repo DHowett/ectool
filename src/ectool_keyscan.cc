@@ -16,6 +16,7 @@
 #include "keyboard_config.h"
 #include "ectool.h"
 
+#ifndef _WIN32
 enum {
 	/* Alloc this many more scans when needed */
 	KEYSCAN_ALLOC_STEP = 64,
@@ -681,3 +682,12 @@ int cmd_keyscan(int argc, char *argv[])
 
 	return err;
 }
+
+#else // _WIN32
+
+int cmd_keyscan(int argc, char *argv[])
+{
+	return 0;
+}
+
+#endif
