@@ -1,0 +1,35 @@
+stages:
+  - build
+
+build windows/x64:
+  stage: build
+  before_script:
+    - git submodule update --init --recursive
+  script:
+    - mkdir _build
+    - cd _build;
+    - '& "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -A x64 -T ClangCL ..'
+    - '& "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" --build . --config RelWithDebInfo --parallel'
+  artifacts:
+    expire_in: never
+    paths:
+      - _build/src/RelWithDebInfo/ectool.exe
+      - _build/src/RelWithDebInfo/ectool.pdb
+  tags:
+    - windows
+
+build linux/x64:
+  stage: build
+  image: debian:latest
+  before_script:
+    - apt update && apt install -yy cmake clang ninja-build git libftdi1-dev libusb-1.0-0-dev pkg-config
+    - git submodule update --init --recursive
+  script:
+    - mkdir _build
+    - cd _build;
+    - CC=clang CXX=clang++ cmake -GNinja ..
+    - cmake --build .
+  artifacts:
+    expire_in: never
+    paths:
+      - _build/src/ectool
