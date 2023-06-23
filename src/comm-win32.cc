@@ -171,8 +171,8 @@ int comm_init_dev(const char *device_name)
 	/*
 	 * Set temporary size, will be updated later.
 	 */
-	ec_max_outsize = EC_PROTO2_MAX_PARAM_SIZE - 8;
-	ec_max_insize = EC_PROTO2_MAX_PARAM_SIZE;
+	ec_max_outsize = EC_LPC_HOST_PACKET_SIZE - sizeof(struct ec_host_request);
+	ec_max_insize = EC_LPC_HOST_PACKET_SIZE - sizeof(struct ec_host_response);
 
 	return 0;
 }
