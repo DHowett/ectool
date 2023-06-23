@@ -11001,7 +11001,7 @@ int cmd_raw(int argc, char **argv)
 	hexdump((uint8_t*)wrbuf, wrsz);
 
 	rdbuf = new char[256];
-	rdsz = 256;
+	rdsz = ec_max_insize;
 	rdsz = ec_command(command, 0, wrbuf, wrsz, rdbuf, rdsz);
 	if (rdsz < 0) {
 		fprintf(stderr, "EC Error\r\n");
