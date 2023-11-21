@@ -17,6 +17,8 @@
 #define INITIAL_UDELAY 5 /* 5 us */
 #define MAXIMUM_UDELAY 10000 /* 10 ms */
 
+static int ec_lpc_memmap_base;
+
 /*
  * Wait for the EC to be unbusy.  Returns 0 if unbusy, non-zero if
  * timeout.
@@ -230,10 +232,10 @@ static int ec_readmem_lpc(int offset, int bytes, void *dest)
 
 	if (bytes) { /* fixed length */
 		for (; cnt < bytes; i++, s++, cnt++)
-			*s = inb(EC_LPC_ADDR_MEMMAP + i);
+			*s = inb(ec_lpc_memmap_base + i);
 	} else { /* string */
 		for (; i < EC_MEMMAP_SIZE; i++, s++) {
-			*s = inb(EC_LPC_ADDR_MEMMAP + i);
+			*s = inb(ec_lpc_memmap_base + i);
 			cnt++;
 			if (!*s)
 				break;
@@ -243,9 +245,28 @@ static int ec_readmem_lpc(int offset, int bytes, void *dest)
 	return cnt;
 }
 
+static int ec_try_init_lpc(int memmap_base)
+{
+	/*
+	 * Test if LPC command args are supported.
+	 *
+	 * The cheapest way to do this is by looking for the memory-mapped
+	 * flag.  This is faster than sending a new-style 'hello' command and
+	 * seeing whether the EC sets the EC_HOST_ARGS_FLAG_FROM_HOST flag
+	 * in args when it responds.
+	 */
+	if (inb(memmap_base + EC_MEMMAP_ID) != 'E' ||
+	    inb(memmap_base + EC_MEMMAP_ID + 1) != 'C') {
+		return -5;
+	}
+
+	ec_lpc_memmap_base = memmap_base;
+	return 0;
+}
+
 int comm_init_lpc(void)
 {
-	int i;
+	int i, rv;
 	int byte = 0xff;
 
 	/* Request I/O privilege */
@@ -270,22 +291,21 @@ int comm_init_lpc(void)
 		return -4;
 	}
 
-	/*
-	 * Test if LPC command args are supported.
-	 *
-	 * The cheapest way to do this is by looking for the memory-mapped
-	 * flag.  This is faster than sending a new-style 'hello' command and
-	 * seeing whether the EC sets the EC_HOST_ARGS_FLAG_FROM_HOST flag
-	 * in args when it responds.
-	 */
-	if (inb(EC_LPC_ADDR_MEMMAP + EC_MEMMAP_ID) != 'E' ||
-	    inb(EC_LPC_ADDR_MEMMAP + EC_MEMMAP_ID + 1) != 'C') {
+	rv = ec_try_init_lpc(EC_LPC_ADDR_MEMMAP);
+	if (rv < 0)
+	{
+		// Fall back to the Framework Laptop 13 (AMD Ryzen 7040 Series) MMIO address
+		rv = ec_try_init_lpc(0xE00);
+	}
+
+	if (rv < 0)
+	{
 		fprintf(stderr, "Missing Chromium EC memory map.\n");
-		return -5;
+		return rv;
 	}
 
 	/* Check which command version we'll use */
-	i = inb(EC_LPC_ADDR_MEMMAP + EC_MEMMAP_HOST_CMD_FLAGS);
+	i = inb(ec_lpc_memmap_base + EC_MEMMAP_HOST_CMD_FLAGS);
 
 	if (i & EC_HOST_CMD_FLAG_VERSION_3) {
 		/* Protocol version 3 */
