@@ -34,6 +34,8 @@
 #include "panic.h"
 #include "usb_pd.h"
 
+#include "framework_oem_ec_commands.h"
+
 #ifndef _WIN32
 #include "cros_ec_dev.h"
 #endif
@@ -11018,6 +11020,39 @@ out:
 	return !!rv;
 }
 
+/* Framework Laptop Specific */
+int cmd_fw_charge_limit(int argc, char *argv[])
+{
+	struct fw_ec_params_charge_limit p;
+	struct fw_ec_response_charge_limit r;
+	char* e;
+	int rv;
+
+	p.flags = FW_EC_CHARGE_LIMIT_QUERY;
+
+	if (argc > 1) {
+		p.flags |= FW_EC_CHARGE_LIMIT_SET;
+		p.limit = (uint16_t)strtol(argv[1], &e, 0);
+		if (e && *e) {
+			fprintf(stderr, "invalid argument \"%s\"\n", argv[1]);
+			return 1;
+		}
+
+		if (argc > 2 && !strcmp(argv[2], "once"))
+			p.flags |= FW_EC_CHARGE_LIMIT_OVERRIDE;
+	}
+
+	rv = ec_command(FW_EC_CMD_CHARGE_LIMIT, 0, &p, sizeof(p), &r, sizeof(r));
+	if (rv < 0) {
+		return rv;
+	}
+
+	printf("%d\n", (int)r.limit);
+	return 0;
+}
+
+/* END Framework Laptop Specific */
+
 /* NULL-terminated list of commands */
 const struct command commands[] = {
 	{ "adcread", cmd_adc_read },
@@ -11071,6 +11106,7 @@ const struct command commands[] = {
 	{ "fpseed", cmd_fp_seed },
 	{ "fpstats", cmd_fp_stats },
 	{ "fptemplate", cmd_fp_template },
+	{ "fwchargelimit", cmd_fw_charge_limit },
 	{ "gpioget", cmd_gpio_get },
 	{ "gpioset", cmd_gpio_set },
 	{ "hangdetect", cmd_hang_detect },
