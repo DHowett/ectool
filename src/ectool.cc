@@ -955,6 +955,7 @@ static const char *const ec_feature_names[] = {
 	[EC_FEATURE_REFINED_TABLET_MODE_HYSTERESIS] =
 		"Refined tablet mode hysteresis",
 	[EC_FEATURE_EFS2] = "Early Firmware Selection v2",
+	[EC_FEATURE_SCP] = "System Companion Processor",
 	[EC_FEATURE_ISH] = "Intel Integrated Sensor Hub",
 	[EC_FEATURE_TYPEC_CMD] = "TCPMv2 Type-C commands",
 	[EC_FEATURE_TYPEC_REQUIRE_AP_MODE_ENTRY] =
