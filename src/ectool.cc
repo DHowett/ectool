@@ -11112,7 +11112,7 @@ static int print_cypd_controller(int controller, int port, int addr)
 }
 
 struct fw_pd_controller_map_entry {
-	char* board;
+	const char* board;
 	int pd1port;
 	int pd1addr;
 	int pd2port;
