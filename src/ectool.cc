@@ -11052,6 +11052,113 @@ int cmd_fw_charge_limit(int argc, char *argv[])
 	return 0;
 }
 
+static void print_cypd_version(int controller, int app, uint8_t* data)
+{
+	/*
+	 * Base version: Cypress release version
+	 * Application version: FAE release version
+	 */
+	printf("Controller %d FW%d version %X.%X.%X.%X (Cypress), %X.%X.%X (Framework)\n",
+		controller, app,
+		(data[3]>>4) & 0xF, (data[3]) & 0xF, data[2], data[0] + (data[1]<<8),
+		(data[7]>>4) & 0xF, (data[7]) & 0xF, data[6]);
+}
+
+static int print_cypd_controller(int controller, int port, int addr)
+{
+	struct ec_params_i2c_passthru *p =
+		(struct ec_params_i2c_passthru *)ec_outbuf;
+	struct ec_response_i2c_passthru *r =
+		(struct ec_response_i2c_passthru *)ec_inbuf;
+	struct ec_params_i2c_passthru_msg *msg = p->msg;
+	uint8_t *pdata;
+	int size;
+	int rv;
+
+	p->port = port;
+	p->num_msgs = 2;
+
+	size = sizeof(*p) + p->num_msgs * sizeof(*msg);
+
+	pdata = (uint8_t *)p + size;
+	msg->addr_flags = addr;
+	msg->len = 2;
+	pdata[0] = 0x10;
+	pdata[1] = 0x00; // 0x0010 Little Endian = CCG_READ_ALL_VERSION_REG
+	msg++;
+	msg->addr_flags = addr | EC_I2C_FLAG_READ;
+	msg->len = 24; // Size of all version info for this controller
+
+	rv = ec_command(EC_CMD_I2C_PASSTHRU, 0, p, size + 2, r,
+			sizeof(*r) + 24);
+	if (rv < 0)
+		return rv;
+
+	/* Parse response */
+	if (r->i2c_status & (EC_I2C_STATUS_NAK | EC_I2C_STATUS_TIMEOUT)) {
+		fprintf(stderr, "Transfer failed with status=0x%x\n",
+			r->i2c_status);
+		return -1;
+	}
+
+	if (rv < sizeof(*r) + 24) {
+		fprintf(stderr, "Truncated read response\n");
+		return -1;
+	}
+
+	print_cypd_version(controller, 1, &r->data[8]);
+	print_cypd_version(controller, 2, &r->data[16]);
+	return 0;
+}
+
+struct fw_pd_controller_map_entry {
+	char* board;
+	int pd1port;
+	int pd1addr;
+	int pd2port;
+	int pd2addr;
+};
+
+struct fw_pd_controller_map_entry fw_pd_controller_board_map[] = {
+	{ "hx20",   6, 0x08, 6, 0x40 },
+	{ "hx30",   6, 0x08, 7, 0x40 },
+	{ "azalea", 1, 0x42, 2, 0x40 },
+	{ "lotus",  1, 0x42, 2, 0x40 },
+	{ NULL, 0, 0, 0, 0 },
+};
+
+int cmd_fw_pdversion(int argc, char *argv[])
+{
+	int rv;
+	char r[128];
+
+	rv = ec_command(EC_CMD_GET_VERSION, 0, NULL, 0, r, sizeof(r));
+	if (rv < 0) {
+		fprintf(stderr, "Failed to read board version\n");
+		return rv;
+	}
+
+	char* p;
+	for(p = r; *p != '_' && *p != '-' && *p != '\0'; ++p)
+		;
+	*p = '\0';
+
+	struct fw_pd_controller_map_entry* ent;
+	for(ent = fw_pd_controller_board_map; ent->board != NULL; ++ent) {
+		if(0 == strcmp(ent->board, r))
+			break;
+	}
+
+	if (!ent->board) {
+		fprintf(stderr, "Unknown board %s\n", r);
+		return -1;
+	}
+
+	print_cypd_controller(1, ent->pd1port, ent->pd1addr);
+	print_cypd_controller(2, ent->pd2port, ent->pd2addr);
+	return 0;
+}
+
 /* END Framework Laptop Specific */
 
 /* NULL-terminated list of commands */
@@ -11108,6 +11215,7 @@ const struct command commands[] = {
 	{ "fpstats", cmd_fp_stats },
 	{ "fptemplate", cmd_fp_template },
 	{ "fwchargelimit", cmd_fw_charge_limit },
+	{ "fwpdversion", cmd_fw_pdversion },
 	{ "gpioget", cmd_gpio_get },
 	{ "gpioset", cmd_gpio_set },
 	{ "hangdetect", cmd_hang_detect },
