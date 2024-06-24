@@ -32,6 +32,7 @@ enum comm_interface {
 	COMM_I2C = BIT(2),
 	COMM_SERVO = BIT(3),
 	COMM_USB = BIT(4),
+	COMM_WINRING0 = BIT(5),
 	COMM_ALL = -1
 };
 
