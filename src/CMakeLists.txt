@@ -62,6 +62,7 @@ else()
 
 	target_sources(ectool PRIVATE
 		comm-win32.cc
+		comm-winring0.cc
 		lock/win32_mutex_lock.cc
 	)
 
