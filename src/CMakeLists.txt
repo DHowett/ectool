@@ -52,7 +52,7 @@ else()
 
 	if(MSVC)
 		target_compile_options(ectool PRIVATE
-			/FI"..\\include\\win32_shim.h"
+			/FI${CMAKE_CURRENT_SOURCE_DIR}\\..\\include\\win32_shim.h
 		)
 	else()
 		target_compile_options(ectool PRIVATE
