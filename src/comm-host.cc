@@ -35,7 +35,6 @@ int comm_init_dev(const char *device_name) __attribute__((weak));
 int comm_init_lpc(void) __attribute__((weak));
 int comm_init_i2c(int i2c_bus) __attribute__((weak));
 int comm_init_servo_spi(const char *device_name) __attribute__((weak));
-int comm_init_winring0(void) __attribute__((weak));
 
 static int fake_readmem(int offset, int bytes, void *dest)
 {
@@ -92,10 +91,6 @@ int comm_init_alt(int interfaces, const char *device_name, int i2c_bus)
 
 	if ((interfaces & COMM_SERVO) && comm_init_servo_spi &&
 	    !comm_init_servo_spi(device_name))
-		return 0;
-
-	if ((interfaces & COMM_WINRING0) && comm_init_winring0 &&
-		!comm_init_winring0())
 		return 0;
 
 	/* Do not fallback to other communication methods if target is not a

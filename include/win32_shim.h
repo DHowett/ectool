@@ -15,7 +15,15 @@
 #define COMDAT_INLINE __declspec(noinline) inline
 
 COMDAT_INLINE void usleep(unsigned us) {
-	Sleep(us/1000);
+	// Sleep takes milliseconds, usleep takes microseconds
+	// For sub-millisecond delays, use high-resolution sleep
+	if (us >= 1000) {
+		Sleep(us / 1000);
+	} else if (us > 0) {
+		// For very small delays, use Sleep(1) which is the minimum on Windows
+		// This is better than Sleep(0) which just yields the thread
+		Sleep(1);
+	}
 }
 
 #define strcasecmp _stricmp

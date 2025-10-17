@@ -4,20 +4,57 @@
  */
 
 /* The I/O asm funcs exist only on x86. */
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(__i386__) || defined(__x86_64__) || defined(_WIN32)
 
 #include <stdint.h>
 #include <stdio.h>
+
+#ifdef _WIN32
+#include <conio.h>
+#include <intrin.h>
+
+#include "comm-win32-ring0.h"
+#else
 #include <sys/io.h>
-#include <sys/param.h>
 #include <unistd.h>
+#endif
 
 #include "comm-host.h"
+#include "misc_util.h"
 
 #define INITIAL_UDELAY 5 /* 5 us */
 #define MAXIMUM_UDELAY 10000 /* 10 ms */
 
 static int ec_lpc_memmap_base;
+
+#ifdef _WIN32
+static bool use_ring0;
+static bool winring0_warned;
+static void warn_winring0_needed(void)
+{
+	if (use_ring0 || winring0_warned)
+		return;
+
+	fprintf(stderr,
+		"Direct LPC access failed; start the WinRing0 driver (e.g. via Libre "
+		"Hardware Monitor) or disable Secure Boot.\n");
+	winring0_warned = true;
+}
+static inline uint8_t inb(uint16_t port)
+{
+	if (use_ring0)
+		return ring0_inb(port);
+	return __inbyte(port);
+}
+static inline void outb(uint8_t value, uint16_t port)
+{
+	if (use_ring0) {
+		ring0_outb(value, port);
+		return;
+	}
+	__outbyte(port, value);
+}
+#endif
 
 /*
  * Wait for the EC to be unbusy.  Returns 0 if unbusy, non-zero if
@@ -269,11 +306,18 @@ int comm_init_lpc(void)
 	int i, rv;
 	int byte = 0xff;
 
+#ifdef _WIN32
+	/* Prefer WinRing0 when available, but fall back to direct port I/O. */
+	if (ring0_load()) {
+		use_ring0 = true;
+	}
+#else
 	/* Request I/O privilege */
 	if (iopl(3) < 0) {
 		perror("Error getting I/O privilege");
 		return -3;
 	}
+#endif
 
 	/*
 	 * Test if the I/O port has been configured for Chromium EC LPC
@@ -288,6 +332,9 @@ int comm_init_lpc(void)
 			EC_LPC_ADDR_HOST_CMD, EC_LPC_ADDR_HOST_DATA);
 		fprintf(stderr,
 			"Very likely this board doesn't have a Chromium EC.\n");
+#ifdef _WIN32
+		warn_winring0_needed();
+#endif
 		return -4;
 	}
 
@@ -301,6 +348,9 @@ int comm_init_lpc(void)
 	if (rv < 0)
 	{
 		fprintf(stderr, "Missing Chromium EC memory map.\n");
+#ifdef _WIN32
+		warn_winring0_needed();
+#endif
 		return rv;
 	}
 
@@ -311,7 +361,7 @@ int comm_init_lpc(void)
 		/* Protocol version 3 */
 		ec_command_proto = ec_command_lpc_3;
 		ec_max_outsize = EC_LPC_HOST_PACKET_SIZE -
-				 sizeof(struct ec_host_request);
+				sizeof(struct ec_host_request);
 		ec_max_insize = EC_LPC_HOST_PACKET_SIZE -
 				sizeof(struct ec_host_response);
 
@@ -322,6 +372,9 @@ int comm_init_lpc(void)
 
 	} else {
 		fprintf(stderr, "EC doesn't support protocols we need.\n");
+#ifdef _WIN32
+		warn_winring0_needed();
+#endif
 		return -5;
 	}
 

@@ -2,6 +2,7 @@ add_executable(ectool)
 
 target_include_directories(ectool PRIVATE
 	../include
+	${CMAKE_CURRENT_SOURCE_DIR}
 	${libusb_INCLUDE_DIRS}
 )
 
@@ -62,7 +63,8 @@ else()
 
 	target_sources(ectool PRIVATE
 		comm-win32.cc
-		comm-winring0.cc
+		comm-win32-ring0.cc
+		comm-lpc.cc
 		lock/win32_mutex_lock.cc
 	)
 
