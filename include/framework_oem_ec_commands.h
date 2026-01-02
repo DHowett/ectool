@@ -4,6 +4,17 @@
 #include "ec_commands.h"
 
 /*****************************************************************************/
+/* Flash notification for SPI access control */
+#define FW_EC_CMD_FLASH_NOTIFIED    0x3E01
+
+#define FW_EC_FLASH_ACCESS_SPI      0
+#define FW_EC_FLASH_ACCESS_SPI_DONE 3
+
+struct fw_ec_params_flash_notified {
+	uint8_t flags;
+} __ec_align1;
+
+/*****************************************************************************/
 /* Charge limit control */
 #define FW_EC_CMD_CHARGE_LIMIT   0x3E03
 
