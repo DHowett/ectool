@@ -63,6 +63,8 @@ else()
 	target_sources(ectool PRIVATE
 		comm-win32.cc
 		lock/win32_mutex_lock.cc
+
+		ectool.rc
 	)
 
 	target_include_directories(ectool PRIVATE
