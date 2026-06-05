@@ -11120,10 +11120,18 @@ struct fw_pd_controller_map_entry {
 };
 
 struct fw_pd_controller_map_entry fw_pd_controller_board_map[] = {
-	{ "hx20",   6, 0x08, 6, 0x40 },
-	{ "hx30",   6, 0x08, 7, 0x40 },
+	// CCG 6 (0x08, 0x40)
+	{ "hx20",      6, 0x08, 6, 0x40 },
+	{ "hx30",      6, 0x08, 7, 0x40 },
+	{ "marigold",  1, 0x08, 2, 0x40 },
+	{ "sunflower", 1, 0x08, 2, 0x40 },
+
+	// CCG 8 (0x42, 0x40)
 	{ "azalea", 1, 0x42, 2, 0x40 },
 	{ "lotus",  1, 0x42, 2, 0x40 },
+	{ "sakura", 1, 0x42, 2, 0x40 },
+	{ "tulip",  1, 0x42, 2, 0x40 },
+
 	{ NULL, 0, 0, 0, 0 },
 };
 
