@@ -1181,8 +1181,19 @@ int cmd_uptimeinfo(int argc, char *argv[])
 int cmd_version(int argc, char *argv[])
 {
 	struct ec_response_get_version_v1 r;
+	struct fw_ec_params_flash_notified flash_notify;
 	char *build_string = (char *)ec_inbuf;
 	int rv;
+	int spi_unlocked = 0;
+
+	/* Unlock SPI to allow reading RW version on Framework ECs */
+	if (ec_cmd_version_supported(FW_EC_CMD_FLASH_NOTIFIED, 0)) {
+		flash_notify.flags = FW_EC_FLASH_ACCESS_SPI;
+		rv = ec_command(FW_EC_CMD_FLASH_NOTIFIED, 0, &flash_notify,
+				sizeof(flash_notify), NULL, 0);
+		if (rv >= 0)
+			spi_unlocked = 1;
+	}
 
 	if (ec_cmd_version_supported(EC_CMD_GET_VERSION, 1)) {
 		rv = ec_command(EC_CMD_GET_VERSION, 1, NULL, 0, &r,
@@ -1229,6 +1240,14 @@ int cmd_version(int argc, char *argv[])
 			"?"));
 	printf("Build info:    %s\n", build_string);
 exit:
+	/* Re-lock SPI if we unlocked it */
+	if (spi_unlocked &&
+	    ec_cmd_version_supported(FW_EC_CMD_FLASH_NOTIFIED, 0)) {
+		flash_notify.flags = FW_EC_FLASH_ACCESS_SPI_DONE;
+		ec_command(FW_EC_CMD_FLASH_NOTIFIED, 0, &flash_notify,
+			   sizeof(flash_notify), NULL, 0);
+	}
+
 	printf("Tool version:  %s %s %s\n", CROS_ECTOOL_VERSION, DATE, BUILDER);
 
 	return rv;
