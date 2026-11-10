@@ -1,0 +1,55 @@
+name: Build
+on:
+  push:
+    branches:
+      - main
+      - gitea-ci
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - run: |-
+          $vsWhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
+          $devShell = & $vsWhere -products * -latest -prerelease -find **\*DevShell.dll
+          $instance = & $vsWhere -path $devShell -property instanceId
+          Import-Module $devShell
+          Enter-VsDevShell $instance -SkipAutomaticLocation -DevCmdArguments "-arch=x64 -host_arch=x64"
+          "CMAKE_PATH=$(Get-Command cmake | Select-Object -Expand Source)" >> "$env:GITHUB_ENV"
+
+          cmake -A x64 -T ClangCL -B _build -S .
+        name: Configure
+      - run: |-
+          & "$Env:CMAKE_PATH" --build _build --config RelWithDebInfo --parallel
+        name: Compile
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows-amd64
+          path: |
+            _build/src/RelWithDebInfo/ectool.exe
+            _build/src/RelWithDebInfo/ectool.pdb
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |-
+          sudo apt update
+          sudo apt install -yy cmake clang ninja-build git libftdi1-dev libusb-1.0-0-dev pkg-config
+        name: Install Dependencies
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - run: CC=clang CXX=clang++ cmake -B _build -S . -GNinja
+        name: Configure
+      - run: cmake --build _build --parallel
+        name: Compile
+      - uses: actions/upload-artifact@v7
+        with:
+          name: linux-amd64
+          path: _build/src/ectool
